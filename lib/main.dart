@@ -294,6 +294,7 @@ class LowerLabelInputBox extends StatelessWidget {
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           ),
+          style: const TextStyle(fontSize: 10),
         ),
       ],
     );
@@ -317,6 +318,7 @@ class CustomInputField extends StatelessWidget {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
+      style: const TextStyle(fontSize: 15),
     );
   }
 }
