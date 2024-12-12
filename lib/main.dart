@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:screenshot/screenshot.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,35 +13,97 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BigBox(),
-              SizedBox(height: 10),
-              Center(
-                child: Text(
-                  'Preview',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+      home: ScreenshotPage(),
+    );
+  }
+}
+
+class ScreenshotPage extends StatefulWidget {
+  const ScreenshotPage({Key? key}) : super(key: key);
+
+  @override
+  _ScreenshotPageState createState() => _ScreenshotPageState();
+}
+
+class _ScreenshotPageState extends State<ScreenshotPage> {
+  // Create an instance of ScreenshotController
+  ScreenshotController screenshotController = ScreenshotController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        // Removed backgroundColor to use default theme color
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Screenshot(
+              controller: screenshotController,
+              child: const BigBox(),
+            ),
+            const SizedBox(height: 10),
+            const Center(
+              child: Text(
+                'Preview',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const CustomInputField(
+              initialValue: '',
+              hintText: 'Customer details',
+            ),
+            const SizedBox(height: 6),
+            const CustomInputField(
+              hintText: 'Customer number',
+            ),
+            const SizedBox(height: 12),
+            const ReceiptDetails(),
+            const SizedBox(height: 12),
+            // Generate button added here
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  // Action for Generate button
+                  // You can add functionality here if needed
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+                  backgroundColor: Colors.blueAccent, // Customize the color
+                ),
+                child: const Text(
+                  'Generate',
+                  style: TextStyle(fontSize: 14, color: Colors.white),
                 ),
               ),
-              SizedBox(height: 8),
-              CustomInputField(
-                initialValue: '',
-                hintText: 'Customer details',
-              ),
-              SizedBox(height: 6),
-              CustomInputField(
-                hintText: 'Customer number',
-              ),
-              SizedBox(height: 12),
-              ReceiptDetails(),
-              SizedBox(height: 12),
-              GenerateButton(),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            // The RESIT RASMI Button now triggers the screenshot capture
+            ResitRasmiButton(onPressed: () {
+              screenshotController.capture().then((capturedImage) {
+                if (capturedImage != null) {
+                  showCapturedImage(context, capturedImage);
+                }
+              });
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void showCapturedImage(BuildContext context, Uint8List capturedImage) {
+    showDialog(
+      context: context,
+      builder: (context) => Scaffold(
+        appBar: AppBar(
+          title: const Text("Screenshot"),
+        ),
+        body: Center(
+          child: Image.memory(capturedImage),
         ),
       ),
     );
@@ -190,8 +254,6 @@ class BigBox extends StatelessWidget {
                 const SizedBox(height: 8),
                 const LowerLabelInputBoxes(),
                 const SizedBox(height: 10),
-                const ResitRasmiButton(),
-                const SizedBox(height: 4),
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -282,19 +344,17 @@ class LowerLabelInputBox extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            '$label:',
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 10)),
+        const SizedBox(height: 2),
         TextFormField(
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          ),
           style: const TextStyle(fontSize: 10),
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            filled: true,
+            fillColor: Colors.white,
+            isDense: true,
+            border: OutlineInputBorder(),
+          ),
         ),
       ],
     );
@@ -302,71 +362,46 @@ class LowerLabelInputBox extends StatelessWidget {
 }
 
 class CustomInputField extends StatelessWidget {
-  final String? initialValue;
-  final String? hintText;
+  final String hintText;
+  final String initialValue;
 
-  const CustomInputField({super.key, this.initialValue, this.hintText});
+  const CustomInputField({Key? key, this.hintText = '', this.initialValue = ''})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       initialValue: initialValue,
+      style: const TextStyle(fontSize: 12),
       decoration: InputDecoration(
         hintText: hintText,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        hintStyle: const TextStyle(fontSize: 12),
+        contentPadding: const EdgeInsets.all(6),
+        border: OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
       ),
-      style: const TextStyle(fontSize: 15),
     );
   }
 }
 
 class ResitRasmiButton extends StatelessWidget {
-  const ResitRasmiButton({super.key});
+  final VoidCallback onPressed;
+
+  const ResitRasmiButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ElevatedButton(
-        onPressed: () {},
+    return ElevatedButton(
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          backgroundColor: Colors.blueAccent,
         ),
         child: const Text(
-          'RESIT RASMI',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
+            'RESIT RASMI',
+            style: TextStyle(fontSize: 12, color: Colors.white),
         ),
-      ),
     );
   }
 }
-
-class GenerateButton extends StatelessWidget {
-  const GenerateButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ElevatedButton.icon(
-        onPressed: () {},
-        icon: const Icon(Icons.autorenew, color: Colors.green, size: 12),
-        label: const Text(
-          'Generate',
-          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        ),
-      ),
-    );
-  }
-}
-
